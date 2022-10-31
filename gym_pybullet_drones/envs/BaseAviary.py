@@ -74,6 +74,8 @@ class BaseAviary(gym.Env):
             Whether to allocate the attributes needed by subclasses accepting thrust and torques inputs.
 
         """
+        #### Fault #######
+        self.FAULT_STATE = np.array([1,1,1,1])
         #### Constants #############################################
         self.G = 9.8
         self.RAD2DEG = 180/np.pi
@@ -116,6 +118,7 @@ class BaseAviary(gym.Env):
         #### Compute constants #####################################
         self.GRAVITY = self.G*self.M
         self.HOVER_RPM = np.sqrt(self.GRAVITY / (4*self.KF))
+        #self.HOVER_RPM = 13000
         self.MAX_RPM = np.sqrt((self.THRUST2WEIGHT_RATIO*self.GRAVITY) / (4*self.KF))
         self.MAX_THRUST = (4*self.KF*self.MAX_RPM**2)
         if self.DRONE_MODEL == DroneModel.CF2X:
@@ -271,6 +274,8 @@ class BaseAviary(gym.Env):
             in each subclass for its format.
 
         """
+        #### Falut Action ####
+        action = np.multiply(action,self.FAULT_STATE)
         #### Save PNG video frames if RECORD=True and GUI=False ####
         if self.RECORD and not self.GUI and self.step_counter%self.CAPTURE_FREQ == 0:
             [w, h, rgb, dep, seg] = p.getCameraImage(width=self.VID_WIDTH,
@@ -314,7 +319,10 @@ class BaseAviary(gym.Env):
         else:
             self._saveLastAction(action)
             clipped_action = np.reshape(self._preprocessAction(action), (self.NUM_DRONES, 4))
+            # print("Action : ",action)
+            # print("clipped_action : ",clipped_action)
         #### Repeat for as many as the aggregate physics steps #####
+        print(clipped_action)
         for _ in range(self.AGGR_PHY_STEPS):
             #### Update and store the drones kinematic info for certain
             #### Between aggregate steps for certain types of update ###
