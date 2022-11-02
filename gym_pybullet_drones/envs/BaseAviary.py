@@ -322,7 +322,6 @@ class BaseAviary(gym.Env):
             # print("Action : ",action)
             # print("clipped_action : ",clipped_action)
         #### Repeat for as many as the aggregate physics steps #####
-        print(clipped_action)
         for _ in range(self.AGGR_PHY_STEPS):
             #### Update and store the drones kinematic info for certain
             #### Between aggregate steps for certain types of update ###

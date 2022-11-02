@@ -30,7 +30,7 @@ from ray.rllib.agents import ppo
 from gym_pybullet_drones.utils.Logger import Logger
 from gym_pybullet_drones.envs.single_agent_rl.TakeoffAviary import TakeoffAviary
 from gym_pybullet_drones.envs.single_agent_rl.HoverAviary import HoverAviary
-from gym_pybullet_drones.envs.single_agent_rl.FaultAviary import FaultAviary
+#from gym_pybullet_drones.envs.single_agent_rl.FaultAviary import FaultAviary
 from gym_pybullet_drones.utils.utils import sync, str2bool
 
 DEFAULT_RLLIB = False
