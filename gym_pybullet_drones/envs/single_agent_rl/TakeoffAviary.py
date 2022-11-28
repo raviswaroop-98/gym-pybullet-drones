@@ -46,6 +46,7 @@ class TakeoffAviary(BaseSingleAgentAviary):
             The type of observation space (kinematic information or vision)
         act : ActionType, optional
             The type of action space (1 or 3D; RPMS, thurst and torques, or waypoint with PID control)
+
         """
         super().__init__(drone_model=drone_model,
                          initial_xyzs=initial_xyzs,

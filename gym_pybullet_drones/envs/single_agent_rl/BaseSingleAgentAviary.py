@@ -45,7 +45,8 @@ class BaseSingleAgentAviary(BaseAviary):
                  gui=False,
                  record=False, 
                  obs: ObservationType=ObservationType.KIN,
-                 act: ActionType=ActionType.RPM
+                 act: ActionType=ActionType.RPM,
+                 prop_fault: int=0
                  ):
         """Initialization of a generic single agent RL environment.
 
@@ -71,18 +72,22 @@ class BaseSingleAgentAviary(BaseAviary):
         gui : bool, optional
             Whether to use PyBullet's GUI.
         record : bool, optional
-            Whether to save a video oclaf the simulation in folder `files/videos/`.
+            Whether to save a video of the simulation in folder `files/videos/`.
         obs : ObservationType, optional
             The type of observation space (kinematic information or vision)
         act : ActionType, optional
             The type of action space (1 or 3D; RPMS, thurst and torques, waypoint or velocity with PID control; etc.)
 
         """
+        self.fault_state = {0:np.array([1,1,1,1]),
+                            1:np.array([1,1,1,0]),
+                            2:np.array([1,0,1,0])}
+        self.prop_fault = prop_fault
         vision_attributes = True if obs == ObservationType.RGB else False
         dynamics_attributes = True if act in [ActionType.DYN, ActionType.ONE_D_DYN] else False
         self.OBS_TYPE = obs
         self.ACT_TYPE = act
-        self.EPISODE_LEN_SEC = 9
+        self.EPISODE_LEN_SEC = 5
         #### Create integrated controllers #########################
         if act in [ActionType.PID, ActionType.VEL, ActionType.TUN, ActionType.ONE_D_PID]:
             os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -116,7 +121,7 @@ class BaseSingleAgentAviary(BaseAviary):
                          gui=gui,
                          record=record, 
                          obstacles=True, # Add obstacles for RGB observations and/or FlyThruGate
-                         user_debug_gui=True, # Remove of RPM sliders from all single agent learning aviaries
+                         user_debug_gui=False, # Remove of RPM sliders from all single agent learning aviaries
                          vision_attributes=vision_attributes,
                          dynamics_attributes=dynamics_attributes
                          )
@@ -175,7 +180,7 @@ class BaseSingleAgentAviary(BaseAviary):
         if self.ACT_TYPE == ActionType.TUN:
             size = 6
         elif self.ACT_TYPE in [ActionType.RPM, ActionType.DYN, ActionType.VEL]:
-            size = 4
+            size = 4 - self.prop_fault
         elif self.ACT_TYPE == ActionType.PID:
             size = 3
         elif self.ACT_TYPE in [ActionType.ONE_D_RPM, ActionType.ONE_D_DYN, ActionType.ONE_D_PID]:
@@ -213,6 +218,10 @@ class BaseSingleAgentAviary(BaseAviary):
             commanded to the 4 motors of each drone.
 
         """
+        if self.prop_fault==1:
+            action = np.append(action,[0])
+        if self.prop_fault==2:
+            action = np.array([action[0],0,action[1],0])
         if self.ACT_TYPE == ActionType.TUN:
             self.ctrl.setPIDCoefficients(p_coeff_pos=(action[0]+1)*self.TUNED_P_POS,
                                          i_coeff_pos=(action[1]+1)*self.TUNED_I_POS,
@@ -223,8 +232,9 @@ class BaseSingleAgentAviary(BaseAviary):
                                          )
             return self._trajectoryTrackingRPMs() 
         elif self.ACT_TYPE == ActionType.RPM:
-            ret = np.array(self.HOVER_RPM * (action))
-            return ret
+            rpm = np.array(self.HOVER_RPM * (1+0.45*action))
+            fault_rpm = np.multiply(rpm,(self.fault_state[self.prop_fault]))
+            return fault_rpm
         elif self.ACT_TYPE == ActionType.DYN:
             return nnlsRPM(thrust=(self.GRAVITY*(action[0]+1)),
                            x_torque=(0.05*self.MAX_XY_TORQUE*action[1]),
@@ -320,9 +330,6 @@ class BaseSingleAgentAviary(BaseAviary):
             # return spaces.Box( low=obs_lower_bound, high=obs_upper_bound, dtype=np.float32 )
             ############################################################
             #### OBS SPACE OF SIZE 12
-            #### Observation vector ### X        Y        Z        R       P       Y       VX       VY       VZ       WX       WY       WZ
-            # obs_lower_bound = np.array([-1,      -1,      0,     -1,     -1,     -1,     -1,      -1,      -1,      -1,      -1,      -1])
-            # obs_upper_bound = np.array([1,       1,       1,     1,      1,      1,      1,       1,       1,       1,       1,       1]) 
             return spaces.Box(low=np.array([-1,-1,0, -1,-1,-1, -1,-1,-1, -1,-1,-1]),
                               high=np.array([1,1,1, 1,1,1, 1,1,1, 1,1,1]),
                               dtype=np.float32
@@ -357,7 +364,6 @@ class BaseSingleAgentAviary(BaseAviary):
             return self.rgb[0]
         elif self.OBS_TYPE == ObservationType.KIN: 
             obs = self._clipAndNormalizeState(self._getDroneStateVector(0))
-            #mport pdb;pdb.set_trace()
             ############################################################
             #### OBS OF SIZE 20 (WITH QUATERNION AND RPMS)
             # return obs

@@ -2,6 +2,7 @@ import numpy as np
 
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.envs.single_agent_rl.BaseSingleAgentAviary import ActionType, ObservationType, BaseSingleAgentAviary
+from scipy.spatial.transform import Rotation as R
 
 class HoverAviary(BaseSingleAgentAviary):
     """Single agent RL problem: hover at position."""
@@ -12,14 +13,14 @@ class HoverAviary(BaseSingleAgentAviary):
                  drone_model: DroneModel=DroneModel.CF2X,
                  initial_xyzs=None,
                  initial_rpys=None,
-                 final_xyzs = np.array([0,0,1]),
                  physics: Physics=Physics.PYB,
                  freq: int=240,
                  aggregate_phy_steps: int=1,
                  gui=False,
                  record=False, 
                  obs: ObservationType=ObservationType.KIN,
-                 act: ActionType=ActionType.RPM
+                 act: ActionType=ActionType.RPM,
+                 prop_fault: int=0 
                  ):
         """Initialization of a single agent RL environment.
 
@@ -58,9 +59,9 @@ class HoverAviary(BaseSingleAgentAviary):
                          gui=gui,
                          record=record,
                          obs=obs,
-                         act=act
+                         act=act,
+                         prop_fault=prop_fault
                          )
-        self.final_xyzs = final_xyzs
 
     ################################################################################
     
@@ -74,8 +75,17 @@ class HoverAviary(BaseSingleAgentAviary):
 
         """
         state = self._getDroneStateVector(0)
-        return -1 * np.linalg.norm(self.final_xyzs-state[0:3])**2
-
+        obs = self._computeObs()
+        rotation = R.from_euler('xyz',obs[3:6]).as_matrix()
+        z = np.array([0,0,1])
+        z_ = np.matmul(rotation,z)
+        ang = np.arccos(np.dot(z,z_)/(np.linalg.norm(z)*np.linalg.norm(z_)))
+        ang_vel = obs[9:12]
+        ang_vel_error = -0.2 * (np.linalg.norm(np.array([0,0,0])-ang_vel)**2)
+        #pos_error = -2 * (np.linalg.norm(self.final_xyzs-state[0:3])**2)
+        angle_error = -6 * ang
+        default = -1 * np.linalg.norm(np.array([0, 0, 1])-state[0:3])**2 
+        return default + angle_error  + ang_vel_error
     ################################################################################
     
     def _computeDone(self):
