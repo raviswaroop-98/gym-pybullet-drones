@@ -38,7 +38,7 @@ On Ubuntu and with a GPU available, optionally uncomment [line 203](https://gith
 -->
 
 ## Examples
-There are 2 basic template scripts in [`gym_pybullet_drones/`](https://github.com/utiasDSL/gym-pybullet-drones/tree/master/gym_pybullet_drones/examples): `singleagent.py` and `test_singleagent.py`
+There are 2 basic template scripts in `gym_pybullet_drones/`: `singleagent.py` and `test_singleagent.py`
 
-Run `singleagent.py` to train a reinforcement learning algorithm to train a drone to hover and the model is saved in [`gym_pybullet_drones/results`].
+Run `singleagent.py` to train a reinforcement learning algorithm to train a drone to hover and the model is saved in `gym_pybullet_drones/results`.
 To evaluate the trained model run `test_singleagent.py`.
