@@ -49,7 +49,7 @@ DEFAULT_ALGO = 'ddpg'
 
 def run(exp, gui=DEFAULT_GUI, plot=DEFAULT_PLOT, output_folder=DEFAULT_OUTPUT_FOLDER):
     #### Load the model from file ##############################
-    default = "/Users/raviswarooprayavarapu/Documents/gym-pybullet-drones/gym_pybullet_drones/results"
+    default = "/Users/raviswarooprayavarapu/Documents/gym-pybullet-drones/gym_pybullet_drones/examples/results"
     if DEFAULT_ALGO == 'ppo':
         path = default+"/save-hover-ppo-kin-rpm-11.23.2022_17.14.52"
         mod = path + "/success_model.zip"
@@ -125,6 +125,12 @@ def run(exp, gui=DEFAULT_GUI, plot=DEFAULT_PLOT, output_folder=DEFAULT_OUTPUT_FO
     # logger.save_as_csv()
     if plot:
         logger.plot()
+
+    # with np.load(path+'/evaluations.npz') as data:
+    #     print(data.files)
+    #     print(data['timesteps'])
+    #     print(data['results'])
+    #     print(data['ep_lengths'])
 
 if __name__ == "__main__":
     #### Define and parse (optional) arguments for the script ##
